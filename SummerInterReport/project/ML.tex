@@ -1,0 +1,317 @@
+
+\chapter{System Architecture}
+
+\section{Drone}
+%ye daalde Dicky. Himanshu tu bhi padhlio ye summary kal bolne ke lie
+%ok
+Drones are the quadcopter versions of Unmanned Aerial Vehicles (UAVs) which are used extensively in various fields due to their high maneuverability and stability in almost every conditions. This results their use in a very wide field of applications which asks for high flight times, high altitudes, stable operation and communication. We have explored the drone platform with 3 different flight controllers all of which have been explained in the coming sections. We have also developed a code to fly drones in constrained environment from scratch through python based communication over WiFi for the PID controls, processing on base station (Laptop) and the waypoint navigation with obstacles through Lua Scripting on Open Licensed version of Virtual Robotic Simulator V-REP simulator and emulator through an overhead camera to understand the dynamics of drones in aerodynamical range as well as exploiting the RF communications. We have further used CC3D mini flight controller to fly the drone using in built codes, calibrating the ESCs and the flight controller with the motors on the custom chassis drone we developed the architecture of. We have further moved to the APM 2.8 flight controller to incorporate the GPS control and telemetry extensions. We used Mission Planner to plan the path using a polygon method where the planner automatically divides the whole region and covers the entire area. The Open Drone Map Plugin in Mission planner triggers the data acquisition circuitry to click images and later stitch the orthomosaic. 
+
+\subsection{Waypoint Navigation in constrained environment}
+We experimented on the Pluto X drone developed by Dronaviation to undersand the dynamics of drone, code it from scratch to implement the PID algorithm (Propotional-Integral-Derivative Controller algorithm). 
+\begin{figure}[H]
+    \centering
+    \includegraphics[]{SummerInterReport/project/Images-Major/plutox.png}
+    \caption{PlutoX drone from dronaaviation}
+    \label{fig:plutox}
+\end{figure}
+The plutoX drone has the Primus V3R flight controller. It has 16 GPIOs, 2 DAC Channels, 10 DOF Sensor Sui, 4 Mosfet Drivers, 2 UARTS, 20 Pin Header, 4 H Bridge Drivers to connect the Brushless DC motors and 11 Timer Channels. The drone practically presents a 10 minutes flight time with a 800 mAh Lithium Polymer 27C (Lipo battery) with a charge time of 45 minutes. The board has an on-board WiFi module which allows it to communicate over a distance of 60m with any wifi module. 
+\\
+\\
+We use the whole setup in a constrained environment where we are limited by the vision of an overhead camera. For the task of simple waypoint navigation, we present a Whycon coordinate as found out using the Whycon detection script in Robotics Operating System. The position is detected by the python script. The drone is connected to the Laptop through Wifi connectivity and has a Whycon marker above it.
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.6]{SummerInterReport/project/Images-Major/whycon_plutox.png}
+    \caption{PlutoX drone with Whycon Marker schematic}
+    \label{fig:plutox_whycon}
+\end{figure}
+We calculate the error of the drone's current position, as given by the current detected whycon coordinates from the overhead camera, as compared to the waypoint it has to reach. This error is fed to the PID controller in derivative, current and iterative sum form. The PID controller algorithm we developed finds the throttle, pitch and yaw values to be given to the drone to make it traverse to the given waypoint. The given four channel values are given to the drone by the laptop as RC commands from the RC WiFi communication built by the drone.
+\\
+\begin{figure}[H]
+    \centering
+    \includegraphics[]{SummerInterReport/project/Images-Major/Flying_pluto.png}
+    \caption{PlutoX drone mid-flight}
+    \label{fig:plutox_flying}
+\end{figure}
+
+
+The complete experimental setup is made such that the drone employs a whycon marker over it for the camera to identify. The environment is populated with hoops through which the drone has to pass with given positions and orientations. The positions of the hoops are set-up initially via the whycon markers and the orientations are st-up ia the Aruco markers. The python code identifies the positions and orientations and sends the same over ROS to the Coppepelia Robotics' Virtual Robotics simulator, V-REP (Virtual Robotics Emulation Platform). The Lua Script we developed takes in the positions and the orientations and convert them to V-REP's frame of reference using mathematical models. The Overhead camera also has a fish-eye effect which is corrected. The coordinates present are in the following form:
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.6]{SummerInterReport/project/Images-Major/varz.png}
+    \caption{Variation in Z-axis with respect to x-y plane}
+    \label{fig:varz}
+\end{figure}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|}
+     \hline
+     \textbf{Position} & \textbf{Whycon Z Coordinate}  \\
+     \hline
+     Centre & 33.47\\
+     Top-left & 29.80\\
+     Top-right & 30.82\\
+     Bottom-left & 29.42\\
+     Bottom-right & 29.58\\
+     \hline
+    \end{tabular}
+    \caption{Variation of Z axis with x-y plane}
+    \label{tab:varz}
+\end{table}
+
+The lua script then places the hoops and the obstacles (in similar way) in the virtual scenario. It then devises the path to the loops in the fashion we give the command to through designating several waypoints in the path. The waypoints are programmable and are devised such that there is no collision with the obstacles by making collision pairs in the 6D state space defined in the Virtual scene itself. The waypoints in the paths are communicated back to the python script which again follows the PID algorithm to cover the waypoints one by one by reducing the errors. The setting up of each stage is explained through flowcharts in the following. Hoops are called trees here.
+
+\begin{figure}[H]
+    \includegraphics[scale=0.9]{SummerInterReport/project/Images-Major/arena.png}
+    \includegraphics[scale=0.9]{SummerInterReport/project/Images-Major/eyflow.png}
+    
+    \caption{L: Arena Image with hoops and obstacles; R: Overhead camera and hoop navigation}
+    \label{fig:arena}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{SummerInterReport/project/Images-Major/simul.png}
+    \caption{Simulation and Emulation in V-REP}
+    \label{fig:simul}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{SummerInterReport/project/Images-Major/finalarena.jpeg}
+    \caption{Traversal of PlutoX through designed arena}
+    \label{fig:simul}
+\end{figure}
+\begin{figure}[H]
+    \centering
+    \includegraphics[]{SummerInterReport/project/Images-Major/pathplan.png}
+    \caption{Path planning in Lua Script}
+    \label{fig:pathPlan}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[]{SummerInterReport/project/Images-Major/completeEy.png}
+    \caption{Complete experimental flow of constrained waypoint navigation}
+    \label{fig:compEy}
+\end{figure}
+
+\subsection{PID Tuning - Mathematics}
+Systems can broadly be divided into two types; \textbf{open loop systems} and \textbf{closed loop systems}. An open loop system, also called an uncontrolled system, is one in which there is no feedback from the output of the system to the input. A closed loop system on the other hand is a controlled system which has receives a feedback of its operation at every point of time. PID (Proportional-integral-derivative) Controllers are a type of close loop systems. They are used widely in automation industries, aviation industries and other technologies where a feedback is required due to their robust nature covering a diverse range of operations and the ease with which they are implemented. They can be used in any application which requires a feedback mechanism to take control of the rise times, over-shootings, steady-state errors and oscillations damping.
+\\
+\textbf{Types of Controllers}
+\begin{itemize}
+    \item \textbf{Proportional Controller (P Controller)} \\
+    P controller is mostly used in first order processes with single energy storage to stabilize the unstable process. The main usage of the P controller is to decrease the steady state error of the system. As the proportional gain factor K increases, the steady state error of the system decreases. However, despite the reduction, P control can never manage to eliminate the steady state error of the system. As we increase the proportional gain, it provides smaller amplitude and phase margin, faster dynamics satisfying wider frequency band and larger sensitivity to the noise. We can use this controller only when our system is tolerable to a constant steady state error. In addition, it can be easily concluded that applying P controller decreases the rise time and after a certain value of reduction on the steady state error, increasing K only leads to overshoot of the system response. P control also causes oscillation if suﬃciently aggressive in the presence of lags and/or dead time. The more lags (higher order), the more problem it leads. Plus, it directly amplifies process noise. 
+    \item \textbf{Proportional Derivative Controller (PD Controller)} \\
+    The aim of using P-D controller is to increase the stability of the system by improving control since it has an ability to predict the future error of the system response. In order to avoid effects of the sudden change in the value of the error signal, the derivative is taken from the output response of the system variable instead of the error signal. Therefore, D mode is designed to be proportional to the change of the output variable to prevent the sudden changes occurring in the control output resulting from sudden changes in the error signal. In addition D directly amplifies process noise therefore D-only control is not used.
+    \item \textbf{Proportional Integral Derivative (PID Controller)}\\ P-I-D controller has the optimum control dynamics including zero steady state error, fast response (short rise time), no oscillations and higher stability. The necessity of using a derivative gain component in addition to the PI controller is to eliminate the overshoot and the oscillations occurring in the output response of the system.
+\end{itemize} 
+\\
+\textbf{Equations and Diagrams}
+\begin{enumerate}
+    \item \textbf{P controller}\\
+    A P controller consists of only a linear gain Kp. The output of such controller can be simply given as\\
+    \begin{equation}
+        output = Kp * error
+    \end{equation}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{SummerInterReport/project/Images-Major/pblock.png}
+        \includegraphics[width=0.8\linewidth]{SummerInterReport/project/Images-Major/pgraph.png}
+        \caption{P controller Block Diagram and Graph}
+        \label{fig:Pcontroller}
+    \end{figure}
+    The whycon input consists of x, y and z coordinates which gives the current location of the drone. Suppose the destination is say, (x1, y1, z1), then the difference of coordinates i.e (x1-x) ,(y1-y), (z1-z) will be fed as an input to the P-controller. The resultant product i.e Kp * error will be added or subtracted to the offset pwm as the need be to give the final output.
+    
+    \item \textbf{PD Controller}\\
+    Oscillations can be damped by using a differential gain along with the P-Controller. The system as a whole is said to be a PD Controller.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{SummerInterReport/project/Images-Major/dblock.png}
+        \includegraphics[width=0.8\linewidth]{SummerInterReport/project/Images-Major/dgraph.png}
+        \caption{PD controller Block Diagram and Graph}
+        \label{fig:PDcontroller}
+    \end{figure}
+    The differential gain Kd is multiplied with the difference of error and previous error. Previous error is a variable that holds the last error generated by the controller output.\\
+    The controller output in this case is given as
+    \begin{equation}
+        output = Kp * error + Kd * (error - previous error)
+    \end{equation}
+    Note that Kd is calculated keeping the sampling time in consideration. This output will be further added or subtracted to the offset pwm as the need be to give the final output.
+    
+    \item \textbf{PID Controller}\\
+        In order to minimise the steady state error we introduce another gain called Ki ,the integral gain. Such a system is said to be a PID Controller
+        \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.8\linewidth]{SummerInterReport/project/Images-Major/pidblock.png}
+        \includegraphics[width=0.8\linewidth]{SummerInterReport/project/Images-Major/pidgraph.png}
+        \caption{PID controller Block Diagram and Graph}
+        \label{fig:PIDcontroller}
+    \end{figure}
+    Here in we keep track of the error over time i.e. sum up the errors over a specified sampling time.
+    \begin{equation}
+        Iterm = (Iterm + error) * Ki
+    \end{equation}
+    Note that Ki is calculated keeping the sampling time in consideration. This output will be further added or subtracted to the oﬀset pwm as the need be to give the final output.
+    \begin{equation}
+        output = Kp*error + Iterm + Kd*(error - previous error)        
+    \end{equation}
+
+
+\end{enumerate}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\subsection{Drone architecture and components}
+In order to successfully navigate through the field, we need to ensure a drone with all the parts intact which are distinctive for each size of the drone. We have used the 250mm or the 25cm Carbon Fiber Chassis of the drone to build a sturdy, powerful and small drone, capable of doing everything with lesser power utilization, greater flight times and better handling at constrained areas. We use the quad-copter in X-copter fashion, meaning that two peds of the quad-copter would face the front hen we give it a pitch and a X orientation is followed at all times, no individual leg leans on giving it pitch, roll or yaw. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.8\linewidth]{SummerInterReport/project/Images-Major/drone.jpeg}
+    \caption{Custom 250mm drone}
+    \label{fig:drone}
+\end{figure}
+The components used are-
+\\
+\begin{enumerate}
+    \item \textbf{Standard Prop}\\
+    The propellers are specifically designed wings of the drone. The propeller design is based on the direction of the circular motion, either it is clockwise or anti-clockwise. The propellers are made from high grade plastics to avoid breaking on crashes. They have an aerodynamic body due to a lean in their horizontal axis to either inwards or outwards based on which, they are fixed on Clockwise or Counter Clockwise motors. The lean is such that the propellers always push air in a downward direction when fixated on the designated clockwise or the anticlockwise motor. This provides necessary thrust for the drone to take off, increase altitude or change its direction. We have used both Two Blade and Three-bladed propellers of 2.2cm single wing span.
+    \item \textbf{Brushless DC Motors (BLDC Motors)}\\
+    We used high power (2200 kV) brush less DC motors in order to levitate the drone along with the body and attachment payload. To make a drone fly, the rotation of all the motors should oppose the oppose the rotation to the adjacent motors. The given motors were connected specifically to the clockwise and counter-clockwise directions.
+    \begin{figure}[H]
+    \centering
+    \includegraphics[]{SummerInterReport/project/Images-Major/motors.png}
+    \caption{Drone BLDC motor connections}
+    \label{fig:motors}
+\end{figure}
+    \item \textbf{Electronics Speed Controllers(ESC)}\\
+    An electronic speed controller or ESC is an electronic circuit with the purpose to vary an electric motor's speed, its direction and possibly also to act as a dynamic brake. It converts DC battery power into 3-phase AC for driving brushless motors. It offer high power, high frequency, high resolution 3-phase AC power to the motors in an extremely compact miniature package. We used Rapid ESCs with high current ratings (3A) to drive the motors. They basically acts as the motor driver circuits in drone with PWM signalling in rapid fashion. The ESC gets power from the LiPo battery and have a signalling wire as well.
+    \item \textbf{Battery}\\ 
+    We used Lithium polymer (LiPo) batteries, It offer the best combination of energy density, power density. It also gives the optimal flight time to cover the planned area. The LiPo battery we used had a 2200 mAh capacity with a 20C rating.
+    \item \textbf{Power Distribution Board}\\
+    It acts as the intermediatory between the LiPo battery, the ESCs and the other electronic circuitry like GPS, receivers and the flight controller on board the drone.
+    \item \textbf{Transmitter-Receiver or GPS}\\
+    These are used to give direction to the drone. We initially used a FlySky transmitter-Receiver at 2.4 GHz for manually giving the 6 channel input (including throttle, pitch, roll and yaw) commands to the drone. For automated controls, a GPS was used along with Mission Planner software to plan the path and burn this updated firmware into the flight controller for it to follow the path. 
+    \item \textbf{Flight Controller} \\
+    We tried using CC3D Mini as well as APM2.8, both of which are discussed in the further sections.
+\end{enumerate}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[]{SummerInterReport/project/Images-Major/block.png}
+    \caption{Architecture Overview from System Design Journal - Intel
+us-systemdesign-journal-drones-f1}
+    \label{fig:compEy}
+\end{figure}
+
+
+\subsection{CC3D mini Flight Controller}
+The CopterControl, CC3D and mini CC3D flight controllers are all types of stabilisation hardware which run the OpenPilot firmware. They can be configured to fly any airframe from fixed wing to an octocopter using the OpenPilot Ground Control Station (GCS) software. The CopterControl was the first generation board, which ceased manufacture in 2012 due to lack of availability of the gyro sensors used for stabilisation. The board design was then revised and released with an improved gyro sensor which is less affected by temperature changes. This revision is called the CC3D, and apart from the gyro sensor change is identical to the original CopterControl.
+\\
+We used the CC3D Mini board which is as cheap as Rs 700 or 10\$ and contains the firmware to fly the drone manually using a transmitter-receiver. GPS cannot be integrated with this flight controler, hence we depreciated it of its use in our work. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.35]{SummerInterReport/project/Images-Major/cc3d.png}
+    \caption{Schematic of mini cc3d (Source: DroneTrest)}
+    \label{fig:compEy}
+\end{figure}
+\subsection{APM 2.8 Flight Controller}
+Ardupilot Mega (APM) is a professional quality IMU autopilot that is based on the Arduino Mega platform.  This autopilot can control fixed-wing aircraft like drones, multi-rotor helicopters, as well as traditional helicopters.  It is a full autopilot capable for autonomous stabilisation, way-point based navigation and two way telemetry with Xbee wireless modules. It supports 8 RC channels with 4 serial ports. It is our main choice of Flight controller due to it's \textbf{advancements over the CC3D mini.}
+\\
+It is an open source autopilot firmware that supports planes, multicopters with full mission scripting over point-and-click. It Can support hundreds of 3D waypoints and also Autonomous takeoff, landing and special action commands such as video and camera controls. There is presence of automatic modes like loitering, stabilization, altitude-hold, Return-To-Launch over manual control and accurate GPS waypoint mapping in autonomous conditions.
+\\
+Ardupilot works on the ArduCopter 5.3.3 firmware which is installed with the help of mission planner. The firmware is the code that runs on the board as a permanent embedded software. Depending on what code we load, we can use the APM to control fixed wing aircraft, multi rotors, helicopters and also ground rovers. We use ArduPilot Mission Planner to update the firmware on the board. The APM board is based on Atmega2560 chip with a small on-board flash memory of 128kB and 16kBs of RAM.
+\\ 
+The APM 2.8 Board has extension ports for Telemetry, External I2C port, Old and New GPS port, a USB port for uploading the firmware and mission, and other GPIO pins as well to support expandability.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[scale=0.7]{SummerInterReport/project/Images-Major/apm.jpg}
+    \caption{Schematic of APM2.8 (Source: ArduPilot)}
+    \label{fig:apm}
+\end{figure}
+\subsection{GPS and Mission Planner}
+For navigation of drone and monitoring the field, we use Ublox M8N GPS module. which is highly sensitive and its gives highly accurate position of the navigating drone. The GPS module is high precision and gives low errors to ensure safe flight. It is used for reaching the given point as well as mapping the whole area and covering it.
+\\
+Mission Planner is a ground control station for Plane, Copter and Rover. It is compatible with Windows only. Mission Planner can be used as a configuration utility or as a dynamic control supplement of the autonomous vehicle. For initial setup-
+\begin{enumerate}
+    \item Load the firmware (the software) into the APM2.8
+    \item Setup, configure, and tune the motors and ESCs of the Drone and the transmitter controls.
+    \item Plan, save and load autonomous missions into autopilot with simple point-and-click way-point entry on Google or other maps.
+    \item Download and analyze mission logs created by autopilot.
+    \item Interface with a PC flight simulator to create a full hardware-in-the-loop UAV simulator.
+\end{enumerate}
+
+With appropriate telemetry hardware, we can also Monitor drone status while in operation and record telemetry logs which contain much more information of the on-board autopilot logs. 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{SummerInterReport/project/Images-Major/mp1.png}
+    \caption{Mission Planner GUI(Source: ArduPilot)}
+    \label{fig:compEy}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=\linewidth]{SummerInterReport/project/Images-Major/mp2.png}
+    \caption{Planned Mission (Source: ArduPilot)}
+    \label{fig:compEy}
+\end{figure}
+
+\section{Data Acquisition and Processing System}
+The Data Acquisition and Processing System consists of a Raspberry Pi 3B model, a Picam version 2 RGB camera and a Pi NoIR Camera. These cameras were used due to their low costs (7\$ and 10\$ respectively), low weight and direct connectivity to Pi's GPU using the CSI port for communication, which makes them the fastest and the best alternatives available. These cameras were located at the bottom of the drone setup in an encasing we designed to keep the set-up expandable and safe on landing.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{SummerInterReport/project/Images-Major/pi_system.jpeg}
+    \caption{Data Acquisition and Processing System}
+    \label{fig:compEy}
+\end{figure}
+
+\subsection{Raspberry Pi}
+ The Raspberry Pi is used to collect the data and act as the trigger. It detects the trigger event by the flight controller and then capture images with time and GPS stamp. Raspberry Pi 3B is a microcomputer which can run on any OS. We selected the native Raspbian OS to operate the Pi. We used the high speed CSI port (Camera Serial Interface). It is a specification of the Mobile Industry Processor Interface (MIPI) Alliance. It defines an interface between a camera and a host processor. The CSI port in Pi connects the camera directly with the VideoCore IV GPU of the Raspberry Pi.
+ \begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\linewidth]{SummerInterReport/project/Images-Major/pi_top.jpeg}
+    \includegraphics[width=0.5\linewidth]{SummerInterReport/project/Images-Major/pi.jpg}
+    \caption{RaspberryPi 3B}
+    \label{fig:compEy}
+\end{figure}
+ The 3B model of Raspberry Pi has the following specifications relevant for data processing and acquisition:
+ \begin{itemize}
+     \item Quad Core 1.2GHz Broadcom BCM2837 64bit CPU
+     \item 1GB RAM
+     \item BCM43438 wireless LAN and Bluetooth Low Energy (BLE) on board for communication purposes for live feed analysis.
+     \item 40-pin extended GPIO
+     \item CSI camera port for connecting a Raspberry Pi camera
+     \item Micro SD port for loading your operating system and storing data
+     \item 4 USB 2 ports
+ \end{itemize}
+\subsection{NoIR Camera}
+The Pi NoIR gives everything the regular RGB Camera Module offers, with one difference: it does not employ an infrared filter. (NoIR = No Infrared.) This means that pictures we take contains the Near Infra Red component in the taken pictures. We also employ a red light filter to block off all extra incoming light. The sensor used is a 5-megapixel OmniVision OV5647 sensor.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\linewidth]{SummerInterReport/project/Images-Major/pi_bottom.jpeg}
+    \caption{NoIR Camera}
+    \label{fig:compEy}
+\end{figure}
+\section{Android Application}
+The android application contains the following codes:
+\begin{enumerate}
+    \item GPS fetching code
+    \item Firebase connectivity to fetch older reports
+    \item Hindi Text views and Buttons to support Bilungistic approach
+    \item Web View over LAN and a given port to show the live feed of the processed NDVI
+\end{enumerate}

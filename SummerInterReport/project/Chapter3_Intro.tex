@@ -1,0 +1,92 @@
+\chapter{Creating A Pedestrian Detection Video Dataset On Indian Roads}
+\section{Introduction}
+\paragraph{} In order to improve the pedestrian detection accuracies as obtained in the Drizy-VISION prototype, we realise that porting the system to use deep learning algorithms is a necessity since these algorithms stand at the forefront when it comes to object detection. With deep learning algorithms becoming a mainstay for vision problems, the need of advanced datasets is a necessity since it is a known fact that deep learning models are data hungry. This means that training these models for pedestrian detection requires a huge pedestrian detection dataset which includes hours annotated video footage of the road scene. All the conventionally available datasets for pedestrian detection (eg. Caltech), however, are recorded in western countries where traffic and pedestrian behaviour is much less chaotic in comparison to countries like India. Hence, we present a pedestrian detection dataset prepared on the roads of New Delhi, India. 
+\paragraph{}Further, since creating such a large scale dataset requires hours of manual labour to annotate thousands of frames, we also propose a video annotation tool to minimize the effort required in creating annotations for multi-class, multi-object tracking in chaotic, object dense, occlusion heavy videos. Although the pedestrian dataset does not make use of the full capabilities of this powerful tool, the features that allow creation of a multi-class object tracking dataset are necessary from the perspective of the future extension of our work and are also discussed in detail in the following section. 
+
+\section{Dataset Collection}
+As we discussed above that a deep learning algorithm works as good as the data it is fed to train upon. Hence, we propose to use an Indian dataset for training a deep learning model for pedestrian detection to improve the accuracies associated with Drizy-VISION module. The main need of dedicated Indian dataset arises due to these reasons:
+\begin{itemize}
+     \item High possibility of partial or full occlusion due to heavy traffic
+     \item Random movement of Pedestrians across the roads
+     \item No separate lanes of pedestrians i.e. cyclists, pedestrians, motorcyclists, cars, heavy vehicles, all run on same roads.
+     \item Majority of roads are one-way street and thus pedestrians comes from both the sides.
+\end{itemize}
+\subsection{Hardware Used}
+\paragraph{} The dataset was collected by mounting a WheelWitness HD Pro Dash Cam which has the following features: \\
+\begin{itemize}
+\item Maximum Video Resolution: Super HD 1296P 2304 X 1296 30 FPS
+\item WDR (Wide Dynamic Range) for best night vision
+\item 170 Degress, Extra Wide Angle Lens
+\end{itemize}
+\begin{figure}
+\centering
+\includegraphics[width=4in, height=2.5in]{SummerInterReport/project/images/dashCam.png}
+\caption{\textbf{WheelWitness mounted Dash Cam}}
+\end{figure}
+
+It has a Ambarella A7 Processor which allows us to record data on the SD card mounted with recording details and real-time camera feed displayed on the 3.0'' TFT Display. The recording starts as soon as the camera is plugged in to the 12V standard Cigar/Charger point in any car and allows the user to change any setting using the provided push buttons on it.
+\subsection{Setup}
+\paragraph{}We collected approximately 10 hours of video at 25 fps and resolution 1280 x 720 taken from WheelWitness HD PRO Dash Cam using Ford ECO Sports Car, driving through regular traffic in urban and semi urban streets and roads of New Delhi in dierent lightning conditions over daily commune. The camera was setup on the rear-view mirror of the car giving a central perspective of the road from the vehicle.  
+
+\subsection{Recording Procedure}
+\paragraph{} The car was driven normally throughout the recordings. Different drivers were appointed to prevent any driving style bias that might be added otherwise. The video was captured across Paschim Vihar, Rajouri Garden, Punjabi Bagh, Rohini, Noida, driving through DND flyway, Gurugram, Dwarka, Rohtak and some local areas of South Delhi. The video Resolution was of 1280 x 720 pixels which was cropped to 1280 x 300p to remove the sky and lower part of the car (dash-board), to avoid unnecessary computation. The unstabilized instances which occured due to unstable roads were discarded.
+
+\subsection{Annotation Procedure}
+\paragraph{} The dataset was annotated using the tool LabelVDOS discussed later in the document. Inspite of the extended abilities of the Video Annotation tool, we have used only single class labelling of pedestrians for detection purposes, including the occlusion label. This setting compares to that of Caltech Dataset and KITTI Benchmark Suite, which some of the most comprehensive dataset for pedestran detection.
+
+\paragraph{} A total of 12539 frames (approx 80 minutes) of data annotation has been completed. In these frames approximately 27000 labelled Bounding Boxes(BBs) of pedestrians were done. Each bounding box(BB) has given two types of labels, pedestrian(23786 BBs) or pedestriano(3182 BBs) denoting unoccluded pedestrians or occluded pedestrians respectively. Since our dataset is still evolving and we are benchmarking it, Indian dataset is not publicly available till date.
+
+\paragraph{} We split Indian dataset into 3 parts, one training and two testing dataset in the ratio of approximately 70\%, 13\% and 17\%. Two testing dataset are created to comment on effect of illumination on results as Test2 dataset have better illumination than Test1. 
+\\
+\\Table 3.1 Summarizes the whole dataset
+\\Table 3.2 Specifies the comparison between Caltech dataset, KITTI Benchmark Suite Dataset and Indian (collected dataset).
+\\
+
+\begin{center}
+\textbf{Table 3.1 - Dataset Specification}
+\begin{table}[!h]
+\center
+ \begin{tabular}{|c|c|c|c|c|} 
+ \hline
+ No. & Training & Test1 & Test2 & Total\\ [0.5ex] 
+ \hline
+ Frames & 8781 & 1551 & 2027 & 12359\\ [0.5ex] 
+ \hline
+ Non empty Frames & 8164 & 1401 & 1927 & 11492\\ [0.5ex] 
+ \hline
+ BBs of Pedestrians & 19343 & 3449 & 4176 & 26968\\ [0.5ex] 
+ \hline
+ Unoccluded & 17065 & 2964 & 3757 & 23786\\ [0.5ex] 
+ \hline
+ Unoccluded pedestrian per frame & 2.09 & 2.12 & 1.95 & 2.07\\ [0.5ex] 
+ \hline
+ Unoccluded pedestrian per second & 52.26 & 52.89 & 48.74 & 51.74\\ [0.5ex] 
+ \hline
+ \end{tabular}
+\end{table}
+    
+\end{center}
+\begin{center}
+\textbf{Table 3.2 - Dataset Comparison}
+\begin{table}[!h]
+\center
+ \begin{tabular}{|c|c|c|c|} 
+ \hline
+ No. & Caltech & KITTI & Our \\ [0.5ex] 
+ \hline
+ Frames & 61439 & 7481 & 12539 \\ [0.5ex] 
+ \hline
+ Non empty Frames & 61439 & 1779 & 11492 \\ [0.5ex] 
+ \hline
+ BBs of Pedestrians & 153234 & 4487 & 26968 \\ [0.5ex] 
+ \hline
+ Unoccluded & 93613 & 4487 & 23786 \\ [0.5ex] 
+ \hline
+ Unoccluded pedestrian per frame & 1.52 & Not video & 2.07 \\ [0.5ex] 
+ \hline
+ Unoccluded pedestrian per second & 38.0 & Not video & 51.74 \\ [0.5ex] 
+ \hline
+ \end{tabular}
+\end{table}
+    
+\end{center}

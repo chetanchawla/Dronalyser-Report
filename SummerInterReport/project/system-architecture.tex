@@ -1,0 +1,88 @@
+\chapter{Driver Assistance System}
+%\section{System Architecture}
+\begin{figure}[hbtp]
+\centering
+{
+\vspace{0.1in}
+\includegraphics[scale=0.45]{project/images/systemarchitecture.pdf}
+\caption{\textbf{System Architecture with and without camera}}
+\label{fig:architecture}
+}
+\end{figure}
+
+The system consists of two modules - DRIZY-VISION and DRIZY-COM. 
+\section{Drizy - VISION}
+\paragraph{}Drizy Vision is responsible for all driver assistance features using computer vision algorithms.
+\subsubsection{Components}
+\begin{enumerate}
+   \item \textbf{Raspberry Pi 3 Model B} \\ This embedded platform is responsible for executing computer vision algorithms that obtain input frames from camera feed to detect and warn drivers of obstacles ahead. Specifications
+   \begin{itemize}
+    \item CPU: 4x ARM Cortex-A53, 1.2GHz
+    \item GPU: Broadcom VideoCore IV
+    \item RAM: 1GB LPDDR2 (900 MHz)
+    \end{itemize}
+    
+    \begin{figure}[hbtp]
+    \centering
+    {
+    \includegraphics[scale=0.35]{project/images/drizy-visioncar.jpg}
+    \caption{\textbf{Raspberry Pi and camera mounted in the car during test drives}}
+    }
+    \end{figure}
+   
+   \item \textbf{Raspberry Pi Camera V2} \\ We used Raspberry Pi Camera V2 which is an 8MP Sony IMX219 image sensor featuring a fixed focus lens & is capable of 3280 x 2464 pixel static images, and also supports 1080p at 30fps, 720p at 60fps, and 640x480p at 90fps video. The Camera Serial Interface(CSI) connects the camera directly to the GPU while the CPU remains available for processing the compute-intensive computer vision algorithms. 
+   
+   \item \textbf{OpenCV + Python} \\ OpenCV is an open source library of programming functions designed for computational efficiency and with a strong focus on real-time applications. Enabled with OpenCL, it can take advantage of the hardware acceleration of the underlying heterogeneous compute platform. We use OpenCV with python bindings to code computer vision algorithms.
+    
+   \item \textbf{Buzzer} \\ We make use of a 5V piezoelectric buzzer connected to pi's GPIO pins to sound alerts. Vehicle's speakers connected to pi's the audio jack can also be used for audio outputs.
+\end{enumerate}
+
+The module has been deployed using Raspberry Pi 3 Model B and Raspberry Pi Camera Module V2. This not only makes a cost effective solution but also speeds up the acquisition of frames from the camera due to CSI connectivity to GPU directly.  Drizy Vision has been prototyped for pedestrian-to-vehicle collision avoidance using HOG+SVM \cite{dalal2005histograms} for pedestrian detection that has been implemented using OpenCV and Python2.
+\paragraph{}The HOG (\textbf{H}istogram of \textbf{O}riented \textbf{G}radients)  person detector uses a sliding detection window, 64 pixels wide by 128 pixels tall, which is moved around the image at a predefined step-size. At each position of the detector window, a HOG descriptor is computed. This descriptor is then shown to the trained SVM (\textbf{S}upport \textbf{V}ector \textbf{M}achine), which classifies it as either a pedestrian or not a pedestrian. 
+\paragraph{}The state of art object detection techniques are based on deep learning algorithms like faster R-CNN\cite{ren2015faster}(\textbf{R}egions with \textbf{C}onvolutional \textbf{N}eural \textbf{N}etworks) and its derivatives like YOLO\cite{redmon2016you}. However, the real challenge involves running them real-time on embedded platforms. Therefore, as an acceptable trade-off of 0.8 and 9 (Figure \ref{fig:eval2}) between precision and frames processed per second, respectively, we chose HOG+SVM based pedestrian detector. It has been found that an FPPI (false positives per image) value of 0.5 is acceptable for such driver assistance systems. Figure \ref{fig:eval2} shows that our HOG+SVM pedestrian detector lies well below this threshold at fairly high recall rates.
+
+\begin{figure}[hbtp]
+  \centering
+  \includegraphics[width=0.5\linewidth]{project/images/roi.png}
+    \includegraphics[width=0.4\linewidth]{project/images/pedestrian.png}
+  \caption{\textbf{Selecting Region of Interest from the Camera view prevents algorithm from detecting all the pedestrians, hence increasing its speed. (b) Detecting pedestrians in ROI using HOG + Opencv}}
+\end{figure}
+\paragraph{}The sliding window algorithm employed for pedestrian detection using HOG+SVM further requires optimisation for bring the fps count to match real-time. Therefore, we reduce the number of sliding windows by selecting region of interest based on known geometric constraints. We achieve further improvement in fps by increasing the step-size of the detection window from 4 pixels to 8 pixels in both x and y direction with nearly no compromise in accuracy. Thus, the processing time for each frame is reduced by a factor of 7x (from 1.4 fps to 9.8 fps). Next, we use multi-threading to parallelize the capture of recent camera frames and pedestrian detection for multiple frames. With the optimised detection techniques, Drizy - Vision is capable of detecting pedestrians within the range of 20 metres.
+% Prototyped on Raspberry pi 3 for pedestrian to vehicle collision avoidance.
+% OpenCV and Python 
+% Used raspberry pi cam to interface directly using camera bus.
+% HOG detector
+% Why no Deep learning?
+% Mention that the assistance system like this requires high fps, and accuracy can be compensated accordingly.
+% Why HOG
+% How far our system detects pedestrians - mention number of windows scanned and all. 
+% Effect of different parameters on fps and stuff 
+% Novelty talks: Optimisation techniques employed
+% Optimisation for embedded platform : ROI, threading, using camera bus
+
+
+\section{Drizy - COM}
+\paragraph{}Drizy-com uses vehicle-to-vehicle communication over network and GPS based localization to provide real time alerts for any V2V collision at an accident blackspot.\\
+    \begin{figure}[hbtp]
+    \centering
+    {
+    \vspace{-0.5cm}
+    \includegraphics[width=\linewidth,scale=0.5]{project/images/database.pdf}
+    \vspace{-1.5cm}
+    \caption{\textbf{Entity relationship diagram of Drizy-Com Database and its firebase implementation}}
+    \label{fig:database}
+    }
+    \end{figure}
+\subsubsection{Components}
+\begin{enumerate}
+    \item \textbf{Smartphone Application}\\ The application uses GPS sensors of the smartphone to calculate latitude, longitude, altitude and speed of vehicle. Using the latitude, longitude and altitude, it also determines the accident blackspot and road number associated with the blackspot on which vehicle is travelling. This is done by comparing dynamic GPS data of vehicle with a pre-defined electronic map of accident prone blackspots known as electronic horizon. The smartphone apllication is also responsible for sounding alerts via smartphone speakers. 
+    % \item Electronic Horizon \\ The horizon contains the following entities
+    % \begin{enumerate}
+    %     \item Accident blackspot number \\ A place where road traffic accidents have historically been concentrated are known as "Accident Blackspots". These places are ingested from traffic surveys of the city.
+    %     \item Road Numbers \\ Each blackspot has atleast three roads, and they are labeled in clockwise fashion. Every road has a Line Equation which is calculated using Haversine formula {citation dedo}.
+    %     \item Speed Limit \\ Each road has a speed limit set by its corresponding traffic authority. They are embedded in the horizon.
+    % \end{enumerate}
+    \item \textbf{Cloud Database} \\ The database is maintained in a tree structure in which the parent nodes represent accident blackspots, child nodes represent road numbers and end points represent vehicles and their parameters(GPS coordinates, direction of navigation and speed). The cloud database used here is Google Firebase for its real time applications.
+    
+    \item \textbf{Cloud Server} \\ The cloud server processes data stored in the cloud database to generate assistance warnings when drivers surpass unacceptable risk thresholds. It is responsible for running all the algorithms efficiently with minimum latency. Drizy-Com is currently protoyped on AWS EC2 UBUNTU 16.04 free tier instance.
+\end{enumerate}
